@@ -2,14 +2,9 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import { ApolloServer, gql } from 'apollo-server-express';
 import { v4 as uuidv4 } from 'uuid';
+import {createConnection} from "typeorm";
 
-interface AddUserDto {
-  name: string;
-  age: number;
-  from: string;
-  latitude: number;
-  longitude: number;
-}
+import userUseCase from './useCases/User';
 
 const accounts = [
   {
@@ -18,7 +13,7 @@ const accounts = [
     from: 'Rio de Janeiro',
     latitude: -20.3679421,
     longitude: -40.3170442,
-    uid: '6a344650-f1b5-4d94-bf5b-4fd8fcf819c2',
+    id: '6a344650-f1b5-4d94-bf5b-4fd8fcf819c2',
     createdDate: 'Wed Feb 24 2021 22:32:09 GMT-0300 (Brasilia Standard Time)'
   },
   {
@@ -27,7 +22,7 @@ const accounts = [
     from: 'Rio de Janeiro',
     latitude: -20.3531683,
     longitude: -40.3157945,
-    uid: '4aec351c-e890-46f5-9f0c-144670d55dfa',
+    id: '4aec351c-e890-46f5-9f0c-144670d55dfa',
     createdDate: 'Wed Feb 24 2021 22:32:24 GMT-0300 (Brasilia Standard Time)'
   },
   {
@@ -36,7 +31,7 @@ const accounts = [
     from: 'Rio de Janeiro',
     latitude: -20.3165917,
     longitude: -40.3031257,
-    uid: '856b9f25-0b40-466c-a16c-e462d3ae9f9d',
+    id: '856b9f25-0b40-466c-a16c-e462d3ae9f9d',
     createdDate: 'Wed Feb 24 2021 22:32:44 GMT-0300 (Brasilia Standard Time)'
   },
   {
@@ -45,7 +40,7 @@ const accounts = [
     from: 'Rio de Janeiro',
     latitude: -20.3165917,
     longitude: -40.3031257,
-    uid: '25fb8293-57cf-4613-8167-4e0a90794b3f',
+    id: '25fb8293-57cf-4613-8167-4e0a90794b3f',
     createdDate: 'Wed Feb 24 2021 22:33:21 GMT-0300 (Brasilia Standard Time)'
   }
 ]
@@ -61,12 +56,12 @@ const typeDefs = gql`
   }
 
   input UserUpdateInput {
-    uid: ID!
-    name: String!
-    age: Int!
-    from: String!
-    latitude: Float!
-    longitude: Float!
+    id: ID!
+    name: String
+    age: Int
+    from: String
+    latitude: Float
+    longitude: Float
   }
 
   type User {
@@ -78,18 +73,13 @@ const typeDefs = gql`
     createdDate: String!
   }
 
-  type CreateUserResponse {
-    uid: String!
-    createdDate: String!
-  }
-
   type Query {
     getUsers(minAge: Int!): [User!]!
   }
 
   type Mutation {
-    addUser(user: UserInput): CreateUserResponse!
-    deleteUser(user: ID!): Boolean!
+    addUser(user: UserInput): String!
+    deleteUser(id: ID!): Boolean!
     updateUser(user: UserUpdateInput): Boolean!
   }
 `;
@@ -106,57 +96,36 @@ const resolvers = {
   },
   Mutation: {
     addUser: async (parent: any, args: any) => {
-      // Obtém o que está dentro de args
-      const user = args.user
+      const data = args.user
 
-      // Formatar dados
-      const data = {
-        ...user,
-        uid: uuidv4(),
-        createdDate: new Date().toString()
-      }
+      const uid = await userUseCase.create(data)
 
-      // Salva na memória
-      accounts.push(data)
-
-      return {
-        uid: data.uid,
-        createdDate: data.createdDate
-      }
+      return uid
     },
     deleteUser: async (parent: any, args: any) => {
-      const uid = args.user
+      const { id } = args 
 
-      const found = accounts.find(value => value.uid === uid)
-
-      if (!found) { return false }
-
-      // TODO this.
-      accounts.filter((value) => value.uid !== uid)
+      await userUseCase.delete({ id })
 
       return true
     },
     updateUser: async (parent: any, args: any) => {
-      const user = args.user
+      const data = args.user
 
-      const found = accounts.find(value => value.uid === user.uid)
-
-      if (!found) { return false }
-
-      // TODO this.
-      accounts.map((value) => value.uid === user.uid ? user : value)
+      await userUseCase.update(data)
 
       return true
     }
   },
 };
 
+createConnection().then(async connection => {
+  const server = new ApolloServer({ typeDefs, resolvers });
 
-const server = new ApolloServer({ typeDefs, resolvers });
+  const app = express();
+  server.applyMiddleware({ app });
 
-const app = express();
-server.applyMiddleware({ app });
-
-app.listen({ port: 4000 }, () =>
-  console.log(`🚀 Server ready at http://localhost:4000${server.graphqlPath}`)
-);
+  app.listen({ port: 4000 }, () =>
+    console.log(`🚀 Server ready at http://localhost:4000${server.graphqlPath}`)
+  );
+}).catch(error => console.log("TypeORM connection error: ", error));
