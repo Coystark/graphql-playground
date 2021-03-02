@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import {createConnection} from "typeorm";
 
 import userUseCase from './useCases/User';
+import orderUseCase from './useCases/Order';
 
 const accounts = [
   {
@@ -73,28 +74,58 @@ const typeDefs = gql`
     createdDate: String!
   }
 
+  input OrderInput {
+    product: String!
+    user: String!
+  }
+
+  type Order {
+    id: ID!
+    product: String!
+    createdDate: String!
+    user: User!
+  }
+
   type Query {
-    getUsers(minAge: Int!): [User!]!
+    users: [User!]!
+    orders(id: ID): [Order!]!
   }
 
   type Mutation {
     addUser(user: UserInput): String!
     deleteUser(id: ID!): Boolean!
     updateUser(user: UserUpdateInput): Boolean!
+
+    addOrder(data: OrderInput): String!
   }
 `;
 
 // Provide resolver functions for your schema fields
 const resolvers = {
   Query: {
-    getUsers: (parent: any, args: any) => {
-      const { minAge } = args
+    /**
+     * User
+     */
+    users: async (parent: any, args: any) => {
+      const users = await userUseCase.getAll()
     
-      return accounts
-        .filter((value) => value.age > minAge)
+      return users
+    },
+    /**
+     * Order
+     */
+    orders: async (parent: any, args: any) => {
+      const { id } = args 
+
+      const orders = await orderUseCase.getAll({ id })
+         
+      return orders
     }
   },
   Mutation: {
+    /**
+     * User
+     */
     addUser: async (parent: any, args: any) => {
       const data = args.user
 
@@ -115,7 +146,19 @@ const resolvers = {
       await userUseCase.update(data)
 
       return true
-    }
+    },
+    /**
+     * Order
+     */
+    addOrder: async (parent: any, args: any) => {
+      const data = args.data
+
+      console.log(data)
+
+      const uid = await orderUseCase.create(data)
+
+      return uid
+    },
   },
 };
 
@@ -125,7 +168,9 @@ createConnection().then(async connection => {
   const app = express();
   server.applyMiddleware({ app });
 
-  app.listen({ port: 4000 }, () =>
-    console.log(`🚀 Server ready at http://localhost:4000${server.graphqlPath}`)
+  const PORT = 4000
+
+  app.listen({ port: PORT }, () =>
+    console.log(`🚀 Server ready at http://localhost:${PORT}${server.graphqlPath}`)
   );
 }).catch(error => console.log("TypeORM connection error: ", error));

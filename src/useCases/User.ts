@@ -70,7 +70,16 @@ const userUseCase = {
       ...data,
     } as User)
 
-  }
+  },
+  getAll: async (): Promise<User[]> => {
+    const manager = getManager()
+
+    const userRepo = manager.getRepository(User)
+
+    const users = await userRepo.find()
+
+    return users
+  }, 
 }
 
 export default userUseCase

@@ -1,5 +1,5 @@
 {
-  "name": "graphql-postgres-playground",
+  "name": "graphql-typeorm-playground",
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
