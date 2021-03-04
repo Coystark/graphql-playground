@@ -2,10 +2,12 @@ version: "3.3"
 
 services: 
   db:
-    image: postgres:latest
+    image: kartoza/postgis:latest
     restart: always
     environment: 
-      POSTGRES_PASSWORD: fla81
+      POSTGRES_USER: postgres
+      POSTGRES_PASS: fla81
+      POSTGRES_MULTIPLE_EXTENSIONS: postgis
     ports:
       - 5432:5432
   adminer:

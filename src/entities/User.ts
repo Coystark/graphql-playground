@@ -3,25 +3,19 @@ import { Order } from './Order'
 
 @Entity()
 export class User {
-	@PrimaryColumn()
+	@PrimaryColumn({ nullable: false })
 	id: string;
 
-	@Column()
+	@Column({ nullable: false })
 	name: string;
 
-	@Column()
+	@Column({ nullable: false })
 	from: string;
 
-	@Column()
+	@Column({ nullable: false })
 	age: number;
 
-	@Column({ type: 'decimal' })
-	latitude: number;
-
-	@Column({ type: 'decimal' })
-	longitude: number;
-
-	@Column()
+	@Column({ nullable: false })
 	createdDate: string;
 
 	@OneToMany(() => Order, order => order.user)

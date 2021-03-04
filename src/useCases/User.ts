@@ -6,8 +6,6 @@ interface ICreateUser {
   name: string;
   age: number;
   from: string;
-  latitude: number;
-  longitude: number;
 }
 
 interface IUpdateUser {
@@ -15,8 +13,6 @@ interface IUpdateUser {
   name?: string;
   age?: number;
   from?: string;
-  latitude?: number;
-  longitude?: number;
 }
 
 interface IDeleteUser {
@@ -34,8 +30,6 @@ const userUseCase = {
     user.age = data.age
     user.from = data.from
     user.createdDate = new Date().toDateString()
-    user.latitude = data.latitude
-    user.longitude = data.longitude
 
     await manager.save(user)
 
@@ -79,7 +73,17 @@ const userUseCase = {
     const users = await userRepo.find()
 
     return users
-  }, 
+  },
+  isValidId: async (id: string): Promise<boolean> => {
+    const manager = getManager()
+
+    const userRepo = manager.getRepository(User)
+
+    const ret = await userRepo.findOne(id)
+
+    return !!ret
+
+  },
 }
 
 export default userUseCase

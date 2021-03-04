@@ -39,8 +39,8 @@ const accounts = [
     name: 'Envy',
     age: 25,
     from: 'Rio de Janeiro',
-    latitude: -20.3165917,
-    longitude: -40.3031257,
+    latitude: -22.9239507,
+    longitude: -43.2958301,
     id: '25fb8293-57cf-4613-8167-4e0a90794b3f',
     createdDate: 'Wed Feb 24 2021 22:33:21 GMT-0300 (Brasilia Standard Time)'
   }
@@ -52,8 +52,6 @@ const typeDefs = gql`
     name: String!
     age: Int!
     from: String!
-    latitude: Float!
-    longitude: Float!
   }
 
   input UserUpdateInput {
@@ -61,22 +59,21 @@ const typeDefs = gql`
     name: String
     age: Int
     from: String
-    latitude: Float
-    longitude: Float
   }
 
   type User {
     name: String!
     age: Int!
     from: String!
-    latitude: Float!
-    longitude: Float!
     createdDate: String!
   }
 
   input OrderInput {
     product: String!
     user: String!
+    latitude: Float!
+    longitude: Float!
+    address: String!
   }
 
   type Order {
@@ -84,11 +81,19 @@ const typeDefs = gql`
     product: String!
     createdDate: String!
     user: User!
+    distance: Float
+    address: String!
+  }
+
+  input QueryOrderLocation {
+    latitude: Float!
+    longitude: Float!
+    radius: Int!
   }
 
   type Query {
     users: [User!]!
-    orders(id: ID): [Order!]!
+    orders(id: ID, location: QueryOrderLocation): [Order!]!
   }
 
   type Mutation {
@@ -115,12 +120,12 @@ const resolvers = {
      * Order
      */
     orders: async (parent: any, args: any) => {
-      const { id } = args 
+      const { id, location } = args 
 
-      const orders = await orderUseCase.getAll({ id })
+      const orders = await orderUseCase.getAll({ id, location } as any)
          
       return orders
-    }
+    },
   },
   Mutation: {
     /**
@@ -152,8 +157,6 @@ const resolvers = {
      */
     addOrder: async (parent: any, args: any) => {
       const data = args.data
-
-      console.log(data)
 
       const uid = await orderUseCase.create(data)
 
